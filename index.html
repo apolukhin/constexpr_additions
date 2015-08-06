@@ -1,0 +1,272 @@
+<html><head>
+		<title>A Proposal to Add Constexpr Modifiers to reverse_iterator, move_iterator, array and Range Access</title>
+		<meta content="http://schemas.microsoft.com/intellisense/ie5" name="vs_targetSchema">
+		<meta http-equiv="Content-Language" content="en-us">
+		<meta http-equiv="Content-Type" content="text/html; charset=utf8">
+	</head>
+	<body bgcolor="#ffffff">
+		<address>Document number: N????=15-????</address>
+		<address>Programming Language C++, Library Subgroup</address>
+		<address>&nbsp;</address>
+		<address>Antony Polukhin &lt;<a href="mailto:antoshkka@gmail.com">antoshkka@gmail.com</a>&gt;</address>
+		<address>&nbsp;</address>
+		<address>August 06, 2015</address>
+		<h1>A Proposal to Add Constexpr Modifiers to reverse_iterator, move_iterator, array and Range Access</h1>
+		<h2><em>Revision 1</em></h2>
+		<h2>I. Motivation</h2>
+		<p>Standard Library provides a great collention of containers and algorithms, which currently lack constexpr support.
+            Even a simple constexpr usage requires reimplementing a big bunch of Standard Library. Consider the simple example:</p>
+		<p><blockquote><pre>#include &lt;array&gt;
+#include &lt;algorithm&gt;
+ 
+int main() {
+    // OK
+    constexpr std::array&lt;char, 6&gt; a { 'H', 'e', 'l', 'l', 'o' };
+    
+    // Failures:
+    // * std::find is not constexpr
+    // * std::array::rbegin(), std::array::rend() is not constexpr
+    // * std::array::reverse_iterator is not constexpr
+    constexpr auto it = std::find(a.rbegin(), a.rend(), 'H');
+}
+</pre></blockquote></p>
+		<p>Providing support for algorithms could be a problem, because of multiple optimizations that exist in current implementations and are not usable in constexpr methods.
+            Because of that, this proposal concentrates on simple containers and iterators.</p>
+		<p>This document proposes a set of constexpr additions to Standard Library, that are easy to implement and do not require additional compiler support.
+            Proof of concept implementation could be found here: <a href="http://www.boost.org/libs/smart_ptr">http://www.boost.org/libs/smart_ptr</a>.</p>
+
+
+		<h2>II. Impact On the Standard</h2>
+		<p>This proposal is a pure library extension. It proposes changes to an 
+			existing headers, <code>&lt;iterator&gt;</code> and <code>&lt;array&gt;</code>, but it does not require changes 
+			to any standard classes or functions and it does not require changes to any of 
+			the standard requirement tables. It does not require any changes in the core 
+			language, and it has been implemented in standard C++. The proposal 
+			depend on <a href="http://cplusplus.github.io/LWG/lwg-active.html#2296">DR2296</a> in std::reverse_iterator::operator->() method.
+		</p>
+		<h2>III. Design Decisions</h2>
+		<h3>A. std::array must behave like an array</h3>
+		<p>std::array was designed to be an extreamely optimized wrapper around array that hase the same layout and constraints as an array.
+            At this moment this is staisfied only partially, because arrays are usable in constexpr methods, while std::array is not.
+            This make the std::array first candidate for constexpr additions.</p>
+		<h3>B. std::reverse_iterator must only reverse</h3>
+		<p>std::reverse_iterator must not add additional constraints on an underlying iterator. It must be as close as possible to underlying base() iterator,
+            so if base() iterator is a pointer or iterator that could be used in constexpr expressions, then std::reverse_iterator must be usable too.</p>
+		<h3>C. std::move_iterator - just move on dereference</h3>
+		<p>Just like std::reverse_iterator, std::move_iterator must not add additional constraints on an underlying iterator. If base() iterator
+            could be used in constexpr expressions, then std::move_iterator must be usable too.</p>
+		<h3>E. Range access functions and iterators related functions constexprness must be unified</h3>
+		<p>This is mostly a unification and minor correction of existing standard. If some of the one-line range access functions have no constexpr,
+            then just add it.</p>
+
+
+
+
+
+
+
+
+
+
+		<h2>IV. Proposed Text</h2>
+		<h3>A. Modifications to header &lt;iterator&gt; synopsis (24.3)</h3>
+		<pre>// 24.4.4, iterator operations:
+template &lt;class InputIterator, class Distance&gt;
+<font color="green">constexpr</font> void advance(InputIterator& i, Distance n);
+
+template &lt;class InputIterator&gt;
+<font color="green">constexpr</font> typename iterator_traits<InputIterator>::difference_type
+distance(InputIterator first, InputIterator last);
+
+template &lt;class ForwardIterator&gt;
+<font color="green">constexpr</font> ForwardIterator next(ForwardIterator x,
+typename std::iterator_traits<ForwardIterator>::difference_type n = 1);
+
+template &lt;class BidirectionalIterator&gt;
+<font color="green">constexpr</font> BidirectionalIterator prev(BidirectionalIterator x,
+typename std::iterator_traits&lt;BidirectionalIterator&gt;::difference_type n = 1);
+
+// 24.5, predefined iterators:
+template &lt;class Iterator&gt; class reverse_iterator;
+
+template &lt;class Iterator1, class Iterator2&gt;
+<font color="green">constexpr</font> bool operator==(
+    const reverse_iterator&lt;Iterator1&gt;& x,
+    const reverse_iterator&lt;Iterator2&gt;& y);
+template &lt;class Iterator1, class Iterator2&gt;
+<font color="green">constexpr</font> bool operator&lt;(
+    const reverse_iterator&lt;Iterator1&gt;& x,
+    const reverse_iterator&lt;Iterator2&gt;& y);
+template &lt;class Iterator1, class Iterator2&gt;
+<font color="green">constexpr</font> bool operator!=(
+    const reverse_iterator&lt;Iterator1&gt;& x,
+    const reverse_iterator&lt;Iterator2&gt;& y);
+template &lt;class Iterator1, class Iterator2&gt;
+<font color="green">constexpr</font> bool operator&gt;(
+    const reverse_iterator&lt;Iterator1&gt;& x,
+    const reverse_iterator&lt;Iterator2&gt;& y);
+template &lt;class Iterator1, class Iterator2&gt;
+<font color="green">constexpr</font> bool operator&gt;=(
+    const reverse_iterator&lt;Iterator1&gt;& x,
+    const reverse_iterator&lt;Iterator2&gt;& y);
+template &lt;class Iterator1, class Iterator2&gt;
+<font color="green">constexpr</font> bool operator&lt;=(
+    const reverse_iterator&lt;Iterator1&gt;& x,
+    const reverse_iterator&lt;Iterator2&gt;& y);
+template &lt;class Iterator1, class Iterator2&gt;
+<font color="green">constexpr</font> auto operator-(
+    const reverse_iterator&lt;Iterator1&gt;& x,
+    const reverse_iterator&lt;Iterator2&gt;& y) -&gt; decltype(y.base() - x.base());
+template &lt;class Iterator&gt;
+<font color="green">constexpr</font> reverse_iterator&lt;Iterator&gt;
+    operator+(
+    typename reverse_iterator&lt;Iterator&gt;::difference_type n,
+    const reverse_iterator&lt;Iterator&gt;& x);
+
+template &lt;class Iterator&gt;
+<font color="green">constexpr</font> reverse_iterator&lt;Iterator&gt; make_reverse_iterator(Iterator i);
+
+
+template &lt;class Iterator&gt; class move_iterator;
+
+template &lt;class Iterator1, class Iterator2&gt;
+<font color="green">constexpr</font> bool operator==(
+    const move_iterator&lt;Iterator1&gt;& x, const move_iterator&lt;Iterator2&gt;& y);
+template &lt;class Iterator1, class Iterator2&gt;
+<font color="green">constexpr</font> bool operator!=(
+    const move_iterator&lt;Iterator1&gt;& x, const move_iterator&lt;Iterator2&gt;& y);
+template &lt;class Iterator1, class Iterator2&gt;
+<font color="green">constexpr</font> bool operator&lt;(
+    const move_iterator&lt;Iterator1&gt;& x, const move_iterator&lt;Iterator2&gt;& y);
+template &lt;class Iterator1, class Iterator2&gt;
+<font color="green">constexpr</font> bool operator&lt;=(
+    const move_iterator&lt;Iterator1&gt;& x, const move_iterator&lt;Iterator2&gt;& y);
+template &lt;class Iterator1, class Iterator2&gt;
+<font color="green">constexpr</font> bool operator&gt;(
+    const move_iterator&lt;Iterator1&gt;& x, const move_iterator&lt;Iterator2&gt;& y);
+template &lt;class Iterator1, class Iterator2&gt;
+<font color="green">constexpr</font> bool operator&gt;=(
+    const move_iterator&lt;Iterator1&gt;& x, const move_iterator&lt;Iterator2&gt;& y);
+
+template &lt;class Iterator1, class Iterator2&gt;
+<font color="green">constexpr</font> auto operator-(
+    const move_iterator&lt;Iterator1&gt;& x,
+    const move_iterator&lt;Iterator2&gt;& y) -&gt; decltype(x.base() - y.base());
+template &lt;class Iterator&gt;
+<font color="green">constexpr</font> move_iterator&lt;Iterator&gt; operator+(
+    typename move_iterator&lt;Iterator&gt;::difference_type n, const move_iterator&lt;Iterator&gt;& x);
+template &lt;class Iterator&gt;
+<font color="green">constexpr</font> move_iterator&lt;Iterator&gt; make_move_iterator(Iterator i);
+
+
+// 24.7, range access:
+template &lt;class C&gt; <font color="green">constexpr</font> auto begin(C& c) -&gt; decltype(c.begin());
+template &lt;class C&gt; <font color="green">constexpr</font> auto begin(const C& c) -&gt; decltype(c.begin());
+template &lt;class C&gt; <font color="green">constexpr</font> auto end(C& c) -&gt; decltype(c.end());
+template &lt;class C&gt; <font color="green">constexpr</font> auto end(const C& c) -&gt; decltype(c.end());
+template &lt;class T, size_t N&gt; constexpr T* begin(T (&array)[N]) noexcept;
+template &lt;class T, size_t N&gt; constexpr T* end(T (&array)[N]) noexcept;
+template &lt;class C&gt; constexpr auto cbegin(const C& c) noexcept(noexcept(std::begin(c)))
+-&gt; decltype(std::begin(c));
+template &lt;class C&gt; constexpr auto cend(const C& c) noexcept(noexcept(std::end(c)))
+-&gt; decltype(std::end(c));
+template &lt;class C&gt; <font color="green">constexpr</font> auto rbegin(C& c) -&gt; decltype(c.rbegin());
+template &lt;class C&gt; <font color="green">constexpr</font> auto rbegin(const C& c) -&gt; decltype(c.rbegin());
+template &lt;class C&gt; <font color="green">constexpr</font> auto rend(C& c) -&gt; decltype(c.rend());
+template &lt;class C&gt; <font color="green">constexpr</font> auto rend(const C& c) -&gt; decltype(c.rend());
+template &lt;class T, size_t N&gt; <font color="green">constexpr</font> reverse_iterator&lt;T*&gt; rbegin(T (&array)[N]);
+template &lt;class T, size_t N&gt; <font color="green">constexpr</font> reverse_iterator&lt;T*&gt; rend(T (&array)[N]);
+template &lt;class E&gt; <font color="green">constexpr</font> reverse_iterator&lt;const E*&gt; rbegin(initializer_list&lt;E&gt; il);
+template &lt;class E&gt; <font color="green">constexpr</font> reverse_iterator&lt;const E*&gt; rend(initializer_list&lt;E&gt; il);
+template &lt;class C&gt; <font color="green">constexpr</font> auto crbegin(const C& c) -&gt; decltype(std::rbegin(c));
+template &lt;class C&gt; <font color="green">constexpr</font> auto crend(const C& c) -&gt; decltype(std::rend(c));
+
+</pre>
+
+		<h3>B. Modifications to header &lt;array&gt; synopsis (24.3)</h3>
+
+		<h2>V. Revision History</h2>
+		<p>Revision 1:</p>
+		<ul>
+			<li>
+				Introduced a requirement that all empty pointers should have <code>use_count()</code>
+			of zero, eliminating most unspecified behavior. The decision is explained in 
+			III.A.5.
+			</li><li>
+				Added a note in III.B.7 that the underlying reference count type is not 
+				required to be <code>long</code>.
+			</li><li>
+			Added an example and a note to IV.E.
+			</li><li>
+				Added protected default constructor, copy constructor, copy assignment and 
+				destructor to <code>enable_shared_from_this</code>.</li></ul>
+		<h2>VI. References</h2>
+		<p>[<a name="Abrahams02">Abrahams02</a>] Dave Abrahams et al, <i>Boost.Python library 
+				documentation</i>, October 2002. Available online at <a href="http://www.boost.org/libs/python/">
+				http://www.boost.org/libs/python/</a></p>
+		<p>[<a name="Alexandrescu01">Alexandrescu01</a>] Andrei Alexandrescu, <i><a href="http://www.awl.com/cseng/titles/0-201-70431-5">
+					Modern C++ Design</a></i>, Addison Wesley, ISBN 0-201-70431-5.</p>
+		<p>[<a name="Berger02">Berger02</a>] Emery D. Berger, Benjamin G. Zorn, Kathryn S. 
+			McKinley, <i>Reconsidering Custom Memory Allocation</i>, ACM SIGPLAN Notices, 
+			Vol. 37, Issue 11, November 2002. Available online at <a href="ftp://ftp.cs.utexas.edu/pub/emery/papers/reconsidering-custom.pdf">
+				ftp://ftp.cs.utexas.edu/pub/emery/papers/reconsidering-custom.pdf</a></p>
+		<p>[<a name="Boehm02">Boehm02</a>] Hans-J. Boehm, <i>Destructors, Finalizers, and 
+				Synchronization</i>, HP Labs Technical Report HPL-2002-335, December 2002. 
+			Available online at <a href="http://www.hpl.hp.com/techreports/2002/HPL-2002-335.html">
+				http://www.hpl.hp.com/techreports/2002/HPL-2002-335.html</a></p>
+		<p>[<a name="Boost00">Boost00</a>] Boost compressed_pair utility component 
+			documentation. Available online at <a href="http://www.boost.org/libs/utility/compressed_pair.htm">
+				http://www.boost.org/libs/utility/compressed_pair.htm</a></p>
+		<p>[<a name="Boost03a">Boost03a</a>] Boost Smart Pointer Library, source file <em>sp_debug_hooks.cpp</em>. 
+			Available online at <a href="http://www.boost.org/libs/smart_ptr/src/sp_debug_hooks.cpp">
+				http://www.boost.org/libs/smart_ptr/src/sp_debug_hooks.cpp</a></p>
+		<p>[<a name="Boost03b">Boost03b</a>] Boost Smart Pointer Library, source file <em>sp_collector.cpp</em>. 
+			Available online at <a href="http://www.boost.org/libs/smart_ptr/src/sp_collector.cpp">
+				http://www.boost.org/libs/smart_ptr/src/sp_collector.cpp</a></p>
+		<p>[<a name="Christopher84">Christopher84</a>] Thomas W. Christopher, <i>Reference 
+				Count Garbage Collection</i>, Software - Practice and Experience, Vol. 
+			14(6), pp. 503-507, June 1984.</p>
+		<p>[<a name="Colvin94">Colvin94</a>] Gregory Colvin, <i>Exception Safe Smart Pointers</i>, 
+			C++ committee document N0555=94-168, July 1994. Available online at <a href="http://std.dkuug.dk/jtc1/sc22/wg21/docs/papers/1994/N0555.pdf">
+				http://std.dkuug.dk/jtc1/sc22/wg21/docs/papers/1994/N0555.pdf</a></p>
+		<p>[<a name="Dimov02">Dimov02</a>] Peter Dimov, Howard E. Hinnant, Dave Abrahams, <i>The 
+				Forwarding Problem: Arguments</i>, C++ committee document N1385=02-0043, 
+			September 2002. Available online at <a href="http://std.dkuug.dk/jtc1/sc22/wg21/docs/papers/2002/n1385.htm">
+				http://std.dkuug.dk/jtc1/sc22/wg21/docs/papers/2002/n1385.htm</a></p>
+		<p>[<a name="Dimov03">Dimov03</a>] Peter Dimov, <i>Smart Pointer Programming Techniques</i>, 
+			March 2003. Available online at <a href="http://www.boost.org/libs/smart_ptr/sp_techniques.html">
+				http://www.boost.org/libs/smart_ptr/sp_techniques.html</a></p>
+		<p>[<a name="Ellis94">Ellis94</a>] John R. Ellis and David L. Detlefs, <i>Safe, 
+				Efficient Garbage Collection for C++</i>, Usenix Proceedings, February 
+			1994. This paper includes an extensive discussion of weak pointers and an 
+			extensive bibliography. Available online at <a href="http://www.usenix.org/publications/library/proceedings/c++94/full_papers/ellis.a">
+				http://www.usenix.org/publications/library/proceedings/c++94/full_papers/ellis.a</a></p>
+		<p>[<a name="Google03">Google03</a>] Searching <a href="http://www.google.com/">www.google.com</a>
+			for "reference counted smart pointer" yields 2,400 entries. Anyone doubting 
+			that shared-ownership smart pointers have been reinvented a large number of 
+			times should read a random selection of these entries.</p>
+		<p>[<a name="Gregor02">Gregor02</a>] Douglas Gregor, <em>A Proposal to add a 
+				Polymorphic Function Object Wrapper to the Standard Library</em>, C++ 
+			committee document N1402=02-0060, October 2002. Available online at <a href="http://std.dkuug.dk/jtc1/sc22/wg21/docs/papers/2002/n1402.htm">
+				http://std.dkuug.dk/jtc1/sc22/wg21/docs/papers/2002/n1402.htm</a></p>
+		<p>[<a name="Hinnant02">Hinnant02</a>] Howard E. Hinnant, Peter Dimov, and Dave 
+			Abrahams, <em>A Proposal to Add Move Semantics Support to the C++ Language</em>, 
+			C++ committee document N1377=02-0035, September 2002. Available online at <a href="http://std.dkuug.dk/jtc1/sc22/wg21/docs/papers/2002/n1377.htm">
+				http://std.dkuug.dk/jtc1/sc22/wg21/docs/papers/2002/n1377.htm</a></p>
+		<p>[<a name="Lakos96">Lakos96</a>] John Lakos, <i><a href="http://www.awl.com/cseng/titles/0-201-63362-0/">
+					Large-Scale C++ Software Design</a></i>, section 9.2.2, page 637, 
+			Addison-Wesley, July 1996, ISBN 0-201-63362-0.</p>
+		<p>[<a name="Meyers01">Meyers01</a>] Scott Meyers, <i><a href="http://www.awl.com/cseng/titles/0-201-74962-9/">
+					Effective STL</a></i>, page 39, Addison-Wesley, June 2001, ISBN 
+			0-201-74962-9.</p>
+		<p>[<a name="Stroustrup94">Stroustrup94</a>] Bjarne Stroustrup, <i><a href="http://www.research.att.com/%7Ebs/dne.html">
+					The Design and Evolution of C++</a></i>, section 14.2.1, page 307, 
+			Addison Wesley, ISBN 0-201-54330-3, March 1994.</p>
+		<p>[<a name="Stroustrup94a">Stroustrup94a</a>] Bjarne Stroustrup, <i><a href="http://www.research.att.com/%7Ebs/dne.html">
+					The Design and Evolution of C++</a></i>, section 10.7.1, page 220, 
+			Addison Wesley, ISBN 0-201-54330-3, March 1994, with quote confirmed via 
+			private email, February, 2003.</p>
+		<p>&nbsp;</p>
+	
+
+</body></html>
