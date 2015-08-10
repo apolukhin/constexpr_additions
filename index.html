@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html><head>
 		<title>A Proposal to Add Constexpr Modifiers to reverse_iterator, move_iterator, array and Range Access</title>
 		<meta content="http://schemas.microsoft.com/intellisense/ie5" name="vs_targetSchema">
@@ -7,7 +7,7 @@
 
 		<style type="text/css">
 			.addition { color: green; text-decoration: underline; }
-        </style>
+		</style>
 
 	</head>
 	<body bgcolor="#ffffff">
@@ -68,22 +68,22 @@ int main() {
 		<p>Just like <code>std::reverse_iterator</code>, <code>std::move_iterator</code> must not add 
 			additional constraints on an underlying iterator. If base() iterator could be used in <code>constexpr</code> expressions, then 
 			<code>std::move_iterator</code> must be thusly usable too.</p>
-		<h3>E. Range access functions and iterators related functions constexprness must be unified</h3>
+		<h3>D. Range access functions and iterators related functions constexprness must be unified</h3>
 		<p>This is mostly a unification and minor correction of existing standard. If some of the one-line range access functions have no <code>constexpr</code>,
 			then just add it.</p>
-		<h3>F. <code>std::array</code> comparisons and <code>swap</code>/<code>fill</code> functions are not affected by this proposal</h3>
+		<h3>E. <code>std::array</code> comparisons and <code>swap</code>/<code>fill</code> functions are not affected by this proposal</h3>
 		<p>Currently comparisons and <code>swap</code>/<code>fill</code> may be implemented with the usage of algorithms from &lt;algorithm&gt; header.
 			Marking comparisons with <code>constexpr</code> will break that ability and will potentially lead to performance degradations.</p>
-		<!--h3>G. <code>std::bitset</code> left unchanged</h3>
+		<!--h3>F. <code>std::bitset</code> left unchanged</h3>
 		<p><code>std::bitset</code> may look like a good candidate for <code>constexpr</code> additions, however bitset implementations are usually
 			heavly optimized with assembly code or compiler intrinsics. Adding <code>constexpr</code> to <code>std::bitset</code> may result in performance degradation,
 			<code>std::bitset</code> left unchanged.</p>
-		<h3>H. <code>std::complex</code> left unchanged</h3>
+		<h3>G. <code>std::complex</code> left unchanged</h3>
 		<p></p-->
 
 
 		<h2>IV. Proposed modifications for N4527</h2>
-		<p>All the additions to the Standard are marked with <span class="addition">underlined green</span>. All other things left unchanged.</p>
+		<p>All the additions to the Standard are marked with <span class="addition">underlined green</span>. All other things left unchanged, any formating change must be ignored.</p>
 		<h3>A. Modifications to header &lt;iterator&gt; synopsis (24.3)</h3>
 		<pre>// 24.4.4, iterator operations:
 template &lt;class InputIterator, class Distance&gt;
@@ -173,7 +173,6 @@ template &lt;class Iterator&gt;
 template &lt;class Iterator&gt;
 <span class="addition">constexpr</span> move_iterator&lt;Iterator&gt; make_move_iterator(Iterator i);
 
-
 // 24.7, range access:
 template &lt;class C&gt; <span class="addition">constexpr</span> auto begin(C&amp; c) -&gt; decltype(c.begin());
 template &lt;class C&gt; <span class="addition">constexpr</span> auto begin(const C&amp; c) -&gt; decltype(c.begin());
@@ -195,147 +194,576 @@ template &lt;class C&gt; <span class="addition">constexpr</span> auto crbegin(co
 template &lt;class C&gt; <span class="addition">constexpr</span> auto crend(const C&amp; c) -&gt; decltype(std::rend(c));
 
 		</pre>
-		<p>Further descriptions in the Standard of above functions marked with <span class="addition">constexpr</span> must preserve the <code>constexpr</code> modifier where appropriate.</p>
 
-		<h3>B. Modifications to header &lt;iterator&gt; "Class template reverse_iterator" (24.5.1.1)</h3>
+
+		<h3>B. Modifications to "24.4.4 Iterator operations"</h3>
 		<pre>
-namespace std {
-	template &lt;class Iterator>
-	class reverse_iterator {
-	public:
-		typedef Iterator iterator_type;
-		typedef typename iterator_traits&lt;Iterator&gt;::iterator_category iterator_category;
-		typedef typename iterator_traits&lt;Iterator&gt;::value_type value_type;
-		typedef typename iterator_traits&lt;Iterator&gt;::difference_type difference_type;
-		typedef typename iterator_traits&lt;Iterator&gt;::pointer pointer;
-		typedef typename iterator_traits&lt;Iterator&gt;::reference reference;
+template &lt;class InputIterator, class Distance&gt;
+<span class="addition">constexpr</span> void advance(InputIterator& i, Distance n);
 
-		<span class="addition">constexpr</span> reverse_iterator();
-		<span class="addition">constexpr</span> explicit reverse_iterator(Iterator x);
-		template &lt;class U&gt; <span class="addition">constexpr</span> reverse_iterator(const reverse_iterator&lt;U&gt;& u);
-		template &lt;class U&gt; <span class="addition">constexpr</span> reverse_iterator& operator=(const reverse_iterator&lt;U&gt;& u);
-		<span class="addition">constexpr</span> Iterator base() const;	 // explicit
+template &lt;class InputIterator&gt;
+<span class="addition">constexpr</span> typename iterator_traits&lt;InputIterator&gt;::difference_type
+distance(InputIterator first, InputIterator last);
 
-		<span class="addition">constexpr</span> reference operator*() const;
-		<span class="addition">constexpr</span> pointer operator-&gt;() const;
-		<span class="addition">constexpr</span> reverse_iterator& operator++();
-		<span class="addition">constexpr</span> reverse_iterator operator++(int);
-		<span class="addition">constexpr</span> reverse_iterator& operator--();
-		<span class="addition">constexpr</span> reverse_iterator operator--(int);
+template &lt;class ForwardIterator&gt;
+<span class="addition">constexpr</span> ForwardIterator next(ForwardIterator x,
+	typename std::iterator_traits&lt;ForwardIterator&gt;::difference_type n = 1);
 
-		<span class="addition">constexpr</span> reverse_iterator operator+ (difference_type n) const;
-		<span class="addition">constexpr</span> reverse_iterator& operator+=(difference_type n);
-		<span class="addition">constexpr</span> reverse_iterator operator- (difference_type n) const;
-		<span class="addition">constexpr</span> reverse_iterator& operator-=(difference_type n);
-		<span class="addition">constexpr</span> unspecified operator[](difference_type n) const;
-	protected:
-		Iterator current;
-	};
+template &lt;class BidirectionalIterator&gt;
+<span class="addition">constexpr</span> BidirectionalIterator prev(BidirectionalIterator x,
+	typename std::iterator_traits&lt;BidirectionalIterator&gt;::difference_type n = 1);
+		</pre>
+
+
+		<h3>C. Modifications to header &lt;iterator&gt; "Class template reverse_iterator" (24.5.1.1)</h3>
+		<pre>namespace std {
+template &lt;class Iterator&gt;
+class reverse_iterator {
+public:
+	typedef Iterator iterator_type;
+	typedef typename iterator_traits&lt;Iterator&gt;::iterator_category iterator_category;
+	typedef typename iterator_traits&lt;Iterator&gt;::value_type value_type;
+	typedef typename iterator_traits&lt;Iterator&gt;::difference_type difference_type;
+	typedef typename iterator_traits&lt;Iterator&gt;::pointer pointer;
+	typedef typename iterator_traits&lt;Iterator&gt;::reference reference;
+
+	<span class="addition">constexpr</span> reverse_iterator();
+	<span class="addition">constexpr</span> explicit reverse_iterator(Iterator x);
+	template &lt;class U&gt; <span class="addition">constexpr</span> reverse_iterator(const reverse_iterator&lt;U&gt;&amp; u);
+	template &lt;class U&gt; <span class="addition">constexpr</span> reverse_iterator&amp; operator=(const reverse_iterator&lt;U&gt;&amp; u);
+	<span class="addition">constexpr</span> Iterator base() const;	 // explicit
+
+	<span class="addition">constexpr</span> reference operator*() const;
+	<span class="addition">constexpr</span> pointer operator-&gt;() const;
+	<span class="addition">constexpr</span> reverse_iterator&amp; operator++();
+	<span class="addition">constexpr</span> reverse_iterator operator++(int);
+	<span class="addition">constexpr</span> reverse_iterator&amp; operator--();
+	<span class="addition">constexpr</span> reverse_iterator operator--(int);
+
+	<span class="addition">constexpr</span> reverse_iterator operator+ (difference_type n) const;
+	<span class="addition">constexpr</span> reverse_iterator&amp; operator+=(difference_type n);
+	<span class="addition">constexpr</span> reverse_iterator operator- (difference_type n) const;
+	<span class="addition">constexpr</span> reverse_iterator&amp; operator-=(difference_type n);
+	<span class="addition">constexpr</span> unspecified operator[](difference_type n) const;
+protected:
+	Iterator current;
+};
+
+template &lt;class Iterator1, class Iterator2&gt;
+<span class="addition">constexpr</span> bool operator==(
+	const reverse_iterator&lt;Iterator1&gt;&amp; x,
+	const reverse_iterator&lt;Iterator2&gt;&amp; y);
+template &lt;class Iterator1, class Iterator2&gt;
+<span class="addition">constexpr</span> bool operator&lt;(
+	const reverse_iterator&lt;Iterator1&gt;&amp; x,
+	const reverse_iterator&lt;Iterator2&gt;&amp; y);
+template &lt;class Iterator1, class Iterator2&gt;
+<span class="addition">constexpr</span> bool operator!=(
+	const reverse_iterator&lt;Iterator1&gt;&amp; x,
+	const reverse_iterator&lt;Iterator2&gt;&amp; y);
+template &lt;class Iterator1, class Iterator2&gt;
+<span class="addition">constexpr</span> bool operator&gt;(
+	const reverse_iterator&lt;Iterator1&gt;&amp; x,
+	const reverse_iterator&lt;Iterator2&gt;&amp; y);
+template &lt;class Iterator1, class Iterator2&gt;
+<span class="addition">constexpr</span> bool operator&gt;=(
+	const reverse_iterator&lt;Iterator1&gt;&amp; x,
+	const reverse_iterator&lt;Iterator2&gt;&amp; y);
+template &lt;class Iterator1, class Iterator2&gt;
+<span class="addition">constexpr</span> bool operator&lt;=(
+	const reverse_iterator&lt;Iterator1&gt;&amp; x,
+	const reverse_iterator&lt;Iterator2&gt;&amp; y);
+template &lt;class Iterator1, class Iterator2&gt;
+<span class="addition">constexpr</span> auto operator-(
+	const reverse_iterator&lt;Iterator1&gt;&amp; x,
+	const reverse_iterator&lt;Iterator2&gt;&amp; y) -&gt; decltype(y.base() - x.base());
+template &lt;class Iterator&gt;
+<span class="addition">constexpr</span> reverse_iterator&lt;Iterator&gt;
+	operator+(
+	typename reverse_iterator&lt;Iterator&gt;::difference_type n,
+	const reverse_iterator&lt;Iterator&gt;&amp; x);
+
+template &lt;class Iterator&gt;
+<span class="addition">constexpr</span> reverse_iterator&lt;Iterator&gt; make_reverse_iterator(Iterator i);
+
 }
 		</pre>
-		<p>Further descriptions in the Standard of above functions marked with <span class="addition">constexpr</span> must preserve the <code>constexpr</code> modifier where appropriate.</p>
 
-		<h3>C. Modifications to header &lt;iterator&gt; "Class template move_iterator" (24.5.3.1)</h3>
+
+		<h3>D. Modifications to "24.5.1.3 reverse_iterator operations"</h3>
 		<pre>
+24.5.1.3.1 reverse_iterator constructor
+<span class="addition">constexpr</span> reverse_iterator();
+Effects: Value initializes current. Iterator operations applied to the resulting iterator have defined
+behavior if and only if the corresponding operations are defined on a value-initialized iterator of type
+Iterator.
 
+<span class="addition">constexpr</span> explicit reverse_iterator(Iterator x);
+Effects: Initializes current with x.
+
+template &lt;class U&gt; <span class="addition">constexpr</span> reverse_iterator(const reverse_iterator&lt;U&gt; &u);
+Effects: Initializes current with u.current.
+
+24.5.1.3.2 reverse_iterator::operator=
+
+template &lt;class U&gt;
+<span class="addition">constexpr</span>  reverse_iterator& operator=(const reverse_iterator&lt;U&gt;& u);
+Effects: Assigns u.base() to current.
+Returns: *this.
+
+24.5.1.3.3 Conversion
+
+<span class="addition">constexpr</span> Iterator base() const;
+Returns: current.
+
+24.5.1.3.4 operator*
+<span class="addition">constexpr</span> reference operator*() const;
+Effects: Iterator tmp = current; return *--tmp;
+
+24.5.1.3.5 operator-&gt;
+<span class="addition">constexpr</span> pointer operator-&gt;() const;
+Returns: std::addressof(operator*()).
+
+24.5.1.3.6 operator++
+<span class="addition">constexpr</span> reverse_iterator& operator++();
+Effects: --current;
+Returns: *this. 
+
+<span class="addition">constexpr</span> reverse_iterator operator++(int);
+Effects: reverse_iterator tmp = *this; --current; return tmp;
+
+24.5.1.3.7 operator--
+
+<span class="addition">constexpr</span> reverse_iterator& operator--();
+Effects: ++current
+Returns: *this.
+
+<span class="addition">constexpr</span> reverse_iterator operator--(int);
+Effects: reverse_iterator tmp = *this; ++current; return tmp;
+
+24.5.1.3.8 operator+
+
+<span class="addition">constexpr</span> reverse_iterator
+operator+(typename reverse_iterator&lt;Iterator&gt;::difference_type n) const;
+Returns: reverse_iterator(current-n).
+
+24.5.1.3.9 operator+=
+
+<span class="addition">constexpr</span> reverse_iterator&
+operator+=(typename reverse_iterator&lt;Iterator&gt;::difference_type n);
+Effects: current -= n;
+Returns: *this.
+
+24.5.1.3.10 operator-
+<span class="addition">constexpr</span> reverse_iterator
+    operator-(typename reverse_iterator&lt;Iterator&gt;::difference_type n) const;
+Returns: reverse_iterator(current+n).
+
+24.5.1.3.11 operator-=
+
+<span class="addition">constexpr</span> reverse_iterator&
+    operator-=(typename reverse_iterator&lt;Iterator&gt;::difference_type n);
+Effects: current += n;
+Returns: *this.
+
+24.5.1.3.12 operator[]
+
+<span class="addition">constexpr</span> unspecified operator[](
+    typename reverse_iterator&lt;Iterator&gt;::difference_type n) const;
+Returns: current[-n-1].
+
+24.5.1.3.13 operator==
+
+template &lt;class Iterator1, class Iterator2&gt;
+<span class="addition">constexpr</span> bool operator==(
+    const reverse_iterator&lt;Iterator1&gt;& x,
+    const reverse_iterator&lt;Iterator2&gt;& y);
+Returns: x.current == y.current.
+
+24.5.1.3.14 operator&lt;
+
+template &lt;class Iterator1, class Iterator2&gt;
+<span class="addition">constexpr</span> bool operator&lt;(
+    const reverse_iterator&lt;Iterator1&gt;& x,
+    const reverse_iterator&lt;Iterator2&gt;& y);
+Returns: x.current &gt; y.current.
+
+24.5.1.3.15 operator!=
+
+template &lt;class Iterator1, class Iterator2&gt;
+<span class="addition">constexpr</span> bool operator!=(
+    const reverse_iterator&lt;Iterator1&gt;& x,
+    const reverse_iterator&lt;Iterator2&gt;& y);
+Returns: x.current != y.current.
+
+24.5.1.3.16 operator&gt;
+
+template &lt;class Iterator1, class Iterator2&gt;
+<span class="addition">constexpr</span> bool operator&gt;(
+    const reverse_iterator&lt;Iterator1&gt;& x,
+    const reverse_iterator&lt;Iterator2&gt;& y);
+Returns: x.current &lt; y.current.
+
+24.5.1.3.17 operator&gt;=
+
+template &lt;class Iterator1, class Iterator2&gt;
+<span class="addition">constexpr</span> bool operator&gt;=(
+    const reverse_iterator&lt;Iterator1&gt;& x,
+    const reverse_iterator&lt;Iterator2&gt;& y);
+Returns: x.current &lt;= y.current.
+
+24.5.1.3.18 operator&lt;=
+
+template &lt;class Iterator1, class Iterator2&gt;
+<span class="addition">constexpr</span> bool operator&lt;=(
+    const reverse_iterator&lt;Iterator1&gt;& x,
+    const reverse_iterator&lt;Iterator2&gt;& y);
+Returns: x.current &gt;= y.current.
+
+24.5.1.3.19 operator-
+
+template &lt;class Iterator1, class Iterator2&gt;
+<span class="addition">constexpr</span> auto operator-(
+    const reverse_iterator&lt;Iterator1&gt;& x,
+    const reverse_iterator&lt;Iterator2&gt;& y) -&gt; decltype(y.base() - x.base());
+Returns: y.current - x.current.
+
+24.5.1.3.20 operator+
+
+template &lt;class Iterator&gt;
+<span class="addition">constexpr</span> reverse_iterator&lt;Iterator&gt; operator+(
+    typename reverse_iterator&lt;Iterator&gt;::difference_type n,
+    const reverse_iterator&lt;Iterator&gt;& x);
+Returns: reverse_iterator&lt;Iterator&gt; (x.current - n).
+
+24.5.1.3.21 Non-member function make_reverse_iterator()
+template &lt;class Iterator&gt;
+<span class="addition">constexpr</span> reverse_iterator&lt;Iterator&gt; make_reverse_iterator(Iterator i);
+Returns: reverse_iterator&lt;Iterator&gt;(i).
+		</pre>
+
+		<h3>E. Modifications to header &lt;iterator&gt; "Class template move_iterator" (24.5.3.1)</h3>
+		<pre>
 namespace std {
-	template &lt;class Iterator>
-	class move_iterator {
-	public:
-		typedef Iterator iterator_type;
-		typedef typename iterator_traits&lt;Iterator&gt;::iterator_category iterator_category;
-		typedef typename iterator_traits&lt;Iterator&gt;::value_type value_type;
-		typedef typename iterator_traits&lt;Iterator&gt;::difference_type difference_type;
-		typedef typename iterator_traits&lt;Iterator&gt;::pointer pointer;
-		typedef typename iterator_traits&lt;Iterator&gt;::reference reference;
 
-		<span class="addition">constexpr</span> move_iterator();
-		<span class="addition">constexpr</span> explicit move_iterator(Iterator x);
-		template &lt;class U&gt; <span class="addition">constexpr</span> move_iterator(const move_iterator&lt;U&gt;& u);
-		template &lt;class U&gt; <span class="addition">constexpr</span> move_iterator& operator=(const move_iterator&lt;U&gt;& u);
+template &lt;class Iterator&gt;
+class move_iterator {
+public:
+	typedef Iterator iterator_type;
+	typedef typename iterator_traits&lt;Iterator&gt;::iterator_category iterator_category;
+	typedef typename iterator_traits&lt;Iterator&gt;::value_type value_type;
+	typedef typename iterator_traits&lt;Iterator&gt;::difference_type difference_type;
+	typedef typename iterator_traits&lt;Iterator&gt;::pointer pointer;
+	typedef typename iterator_traits&lt;Iterator&gt;::reference reference;
 
-		<span class="addition">constexpr</span> Iterator base() const;	 // explicit
-		<span class="addition">constexpr</span> reference operator*() const;
-		<span class="addition">constexpr</span> pointer operator-&gt;() const;
+	<span class="addition">constexpr</span> move_iterator();
+	<span class="addition">constexpr</span> explicit move_iterator(Iterator x);
+	template &lt;class U&gt; <span class="addition">constexpr</span> move_iterator(const move_iterator&lt;U&gt;&amp; u);
+	template &lt;class U&gt; <span class="addition">constexpr</span> move_iterator&amp; operator=(const move_iterator&lt;U&gt;&amp; u);
 
-		<span class="addition">constexpr</span> move_iterator& operator++();
-		<span class="addition">constexpr</span> move_iterator operator++(int);
-		<span class="addition">constexpr</span> move_iterator& operator--();
-		<span class="addition">constexpr</span> move_iterator operator--(int);
+	<span class="addition">constexpr</span> Iterator base() const;	 // explicit
+	<span class="addition">constexpr</span> reference operator*() const;
+	<span class="addition">constexpr</span> pointer operator-&gt;() const;
 
-		<span class="addition">constexpr</span> move_iterator operator+ (difference_type n) const;
-		<span class="addition">constexpr</span> move_iterator& operator+=(difference_type n);
-		<span class="addition">constexpr</span> move_iterator operator- (difference_type n) const;
-		<span class="addition">constexpr</span> move_iterator& operator-=(difference_type n);
-		<span class="addition">constexpr</span> unspecified operator[](difference_type n) const;
-	protected:
-		Iterator current;
-	};
+	<span class="addition">constexpr</span> move_iterator&amp; operator++();
+	<span class="addition">constexpr</span> move_iterator operator++(int);
+	<span class="addition">constexpr</span> move_iterator&amp; operator--();
+	<span class="addition">constexpr</span> move_iterator operator--(int);
+
+	<span class="addition">constexpr</span> move_iterator operator+ (difference_type n) const;
+	<span class="addition">constexpr</span> move_iterator&amp; operator+=(difference_type n);
+	<span class="addition">constexpr</span> move_iterator operator- (difference_type n) const;
+	<span class="addition">constexpr</span> move_iterator&amp; operator-=(difference_type n);
+	<span class="addition">constexpr</span> unspecified operator[](difference_type n) const;
+protected:
+	Iterator current;
+};
+
+
+template &lt;class Iterator1, class Iterator2&gt;
+<span class="addition">constexpr</span> bool operator==(
+	const move_iterator&lt;Iterator1&gt;&amp; x, const move_iterator&lt;Iterator2&gt;&amp; y);
+template &lt;class Iterator1, class Iterator2&gt;
+<span class="addition">constexpr</span> bool operator!=(
+	const move_iterator&lt;Iterator1&gt;&amp; x, const move_iterator&lt;Iterator2&gt;&amp; y);
+template &lt;class Iterator1, class Iterator2&gt;
+<span class="addition">constexpr</span> bool operator&lt;(
+	const move_iterator&lt;Iterator1&gt;&amp; x, const move_iterator&lt;Iterator2&gt;&amp; y);
+template &lt;class Iterator1, class Iterator2&gt;
+<span class="addition">constexpr</span> bool operator&lt;=(
+	const move_iterator&lt;Iterator1&gt;&amp; x, const move_iterator&lt;Iterator2&gt;&amp; y);
+template &lt;class Iterator1, class Iterator2&gt;
+<span class="addition">constexpr</span> bool operator&gt;(
+	const move_iterator&lt;Iterator1&gt;&amp; x, const move_iterator&lt;Iterator2&gt;&amp; y);
+template &lt;class Iterator1, class Iterator2&gt;
+<span class="addition">constexpr</span> bool operator&gt;=(
+	const move_iterator&lt;Iterator1&gt;&amp; x, const move_iterator&lt;Iterator2&gt;&amp; y);
+
+template &lt;class Iterator1, class Iterator2&gt;
+<span class="addition">constexpr</span> auto operator-(
+	const move_iterator&lt;Iterator1&gt;&amp; x,
+	const move_iterator&lt;Iterator2&gt;&amp; y) -&gt; decltype(x.base() - y.base());
+template &lt;class Iterator&gt;
+<span class="addition">constexpr</span> move_iterator&lt;Iterator&gt; operator+(
+	typename move_iterator&lt;Iterator&gt;::difference_type n, const move_iterator&lt;Iterator&gt;&amp; x);
+template &lt;class Iterator&gt;
+<span class="addition">constexpr</span> move_iterator&lt;Iterator&gt; make_move_iterator(Iterator i);
+
 }
 		</pre>
-		<p>Further descriptions in the Standard of above functions marked with <span class="addition">constexpr</span> must preserve the <code>constexpr</code> modifier where appropriate.</p>
 
-		<h3>D. Modifications to header &lt;array&gt; "Class template array overview" (23.3.2.1)</h3>
+
+		<h3>F. Modifications to "24.5.3.3 move_iterator operations"</h3>
 		<pre>
-namespace std {
-	template &lt;class T, size_t N&gt;
-	struct array {
-		// types:
-		typedef T& reference;
-		typedef const T& const_reference;
-		typedef implementation-defined iterator;
-		typedef implementation-defined const_iterator;
-		typedef size_t size_type;
-		typedef ptrdiff_t difference_type;
-		typedef T value_type;
-		typedef T* pointer;
-		typedef const T* const_pointer;
-		typedef std::reverse_iterator&lt;iterator&gt; reverse_iterator;
-		typedef std::reverse_iterator&lt;const_iterator&gt; const_reverse_iterator;
 
-		T elems[N]; // exposition only
+24.5.3.3.1 move_iterator constructors
 
-		// no explicit construct/copy/destroy for aggregate type
+<span class="addition">constexpr</span> move_iterator();
+Effects: Constructs a move_iterator, value initializing current. Iterator operations applied to the
+resulting iterator have defined behavior if and only if the corresponding operations are defined on a
+value-initialized iterator of type Iterator.
 
-		void fill(const T& u);
-		void swap(array&) noexcept(noexcept(swap(declval&lt;T&&gt;(), declval&lt;T&&gt;())));
+<span class="addition">constexpr</span> explicit move_iterator(Iterator i);
+Effects: Constructs a move_iterator, initializing current with i.
 
-		// iterators:
-		<span class="addition">constexpr</span> iterator begin() noexcept;
-		<span class="addition">constexpr</span> const_iterator begin() const noexcept;
-		<span class="addition">constexpr</span> iterator end() noexcept;
-		<span class="addition">constexpr</span> const_iterator end() const noexcept;
+template &lt;class U&gt; <span class="addition">constexpr</span> move_iterator(const move_iterator&lt;U&gt;& u);
+Effects: Constructs a move_iterator, initializing current with u.base().
+Requires: U shall be convertible to Iterator.
 
-		<span class="addition">constexpr</span> reverse_iterator rbegin() noexcept;
-		<span class="addition">constexpr</span> const_reverse_iterator rbegin() const noexcept;
-		<span class="addition">constexpr</span> reverse_iterator rend() noexcept;
-		<span class="addition">constexpr</span> const_reverse_iterator rend() const noexcept;
+24.5.3.3.2 move_iterator::operator=
 
-		<span class="addition">constexpr</span> const_iterator cbegin() const noexcept;
-		<span class="addition">constexpr</span> const_iterator cend() const noexcept;
-		<span class="addition">constexpr</span> const_reverse_iterator crbegin() const noexcept;
-		<span class="addition">constexpr</span> const_reverse_iterator crend() const noexcept;
+template &lt;class U&gt; <span class="addition">constexpr</span> move_iterator& operator=(const move_iterator&lt;U&gt;& u);
+Effects: Assigns u.base() to current.
+Requires: U shall be convertible to Iterator.
 
-		// capacity:
-		constexpr bool empty() const noexcept;
-		constexpr size_type size() const noexcept;
-		constexpr size_type max_size() const noexcept;
-		// element
-		<span class="addition">constexpr</span> reference operator[](size_type n);
-		constexpr const_reference operator[](size_type n) const;
-		<span class="addition">constexpr</span> reference at(size_type n);
-		constexpr const_reference at(size_type n) const;
-		<span class="addition">constexpr</span> reference front();
-		constexpr const_reference front() const;
-		<span class="addition">constexpr</span> reference back();
-		constexpr const_reference back() const;
+24.5.3.3.3 move_iterator conversion
 
-		<span class="addition">constexpr</span> T * data() noexcept;
-		<span class="addition">constexpr</span> const T * data() const noexcept;
-	};
-}
+<span class="addition">constexpr</span> Iterator base() const;
+Returns: current.
+
+24.5.3.3.4 move_iterator::operator*
+
+<span class="addition">constexpr</span> reference operator*() const;
+Returns: static_cast&lt;reference&gt;(*current).
+
+24.5.3.3.5 move_iterator::operator-&gt;
+
+<span class="addition">constexpr</span> pointer operator-&gt;() const;
+Returns: current.
+
+24.5.3.3.6 move_iterator::operator++
+
+<span class="addition">constexpr</span> move_iterator& operator++();
+Effects: ++current.
+Returns: *this.
+
+<span class="addition">constexpr</span> move_iterator operator++(int);
+Effects: move_iterator tmp = *this; ++current; return tmp;
+
+24.5.3.3.7 move_iterator::operator--
+
+<span class="addition">constexpr</span> move_iterator& operator--();
+Effects: --current.
+Returns: *this.
+
+<span class="addition">constexpr</span> move_iterator operator--(int);
+Effects: move_iterator tmp = *this; --current; return tmp;
+
+24.5.3.3.8 move_iterator::operator+
+
+<span class="addition">constexpr</span> move_iterator operator+(difference_type n) const;
+Returns: move_iterator(current + n).
+
+24.5.3.3.9 move_iterator::operator+=
+
+<span class="addition">constexpr</span> move_iterator& operator+=(difference_type n);
+Effects: current += n.
+Returns: *this.
+
+24.5.3.3.10 move_iterator::operator-
+
+<span class="addition">constexpr</span> move_iterator operator-(difference_type n) const;
+Returns: move_iterator(current - n).
+
+24.5.3.3.11 move_iterator::operator-=
+
+<span class="addition">constexpr</span> move_iterator& operator-=(difference_type n);
+Effects: current -= n.
+Returns: *this.
+
+24.5.3.3.12 move_iterator::operator[]
+
+<span class="addition">constexpr</span> unspecified operator[](difference_type n) const;
+Returns: std::move(current[n]).
+
+24.5.3.3.13 move_iterator comparisons
+
+template &lt;class Iterator1, class Iterator2&gt;
+<span class="addition">constexpr</span> bool operator==(const move_iterator&lt;Iterator1&gt;& x, const move_iterator&lt;Iterator2&gt;& y);
+Returns: x.base() == y.base().
+
+template &lt;class Iterator1, class Iterator2&gt;
+<span class="addition">constexpr</span> bool operator!=(const move_iterator&lt;Iterator1&gt;& x, const move_iterator&lt;Iterator2&gt;& y);
+Returns: !(x == y).
+
+template &lt;class Iterator1, class Iterator2&gt;
+<span class="addition">constexpr</span> bool operator&lt;(const move_iterator&lt;Iterator1&gt;& x, const move_iterator&lt;Iterator2&gt;& y);
+Returns: x.base() &lt; y.base().
+
+template &lt;class Iterator1, class Iterator2&gt;
+<span class="addition">constexpr</span> bool operator&lt;=(const move_iterator&lt;Iterator1&gt;& x, const move_iterator&lt;Iterator2&gt;& y);
+Returns: !(y &lt; x).
+
+template &lt;class Iterator1, class Iterator2&gt;
+<span class="addition">constexpr</span> bool operator&gt;(const move_iterator&lt;Iterator1&gt;& x, const move_iterator&lt;Iterator2&gt;& y);
+Returns: y &lt; x.
+
+template &lt;class Iterator1, class Iterator2&gt;
+<span class="addition">constexpr</span> bool operator&gt;=(const move_iterator&lt;Iterator1&gt;& x, const move_iterator&lt;Iterator2&gt;& y);
+Returns: !(x &lt; y).
+
+24.5.3.3.14 move_iterator non-member functions
+
+template &lt;class Iterator1, class Iterator2&gt;
+<span class="addition">constexpr</span> auto operator-(
+    const move_iterator&lt;Iterator1&gt;& x,
+    const move_iterator&lt;Iterator2&gt;& y) -&gt; decltype(x.base() - y.base());
+Returns: x.base() - y.base().
+
+template &lt;class Iterator&gt;
+<span class="addition">constexpr</span> move_iterator&lt;Iterator&gt; operator+(
+    typename move_iterator&lt;Iterator&gt;::difference_type n, const move_iterator&lt;Iterator&gt;& x);
+Returns: x + n.
+
+template &lt;class Iterator&gt;
+<span class="addition">constexpr</span> move_iterator&lt;Iterator&gt; make_move_iterator(Iterator i);
+Returns: move_iterator&lt;Iterator&gt;(i).
 		</pre>
-		<p>Further descriptions in the Standard of above functions marked with <span class="addition">constexpr</span> must preserve the <code>constexpr</code> modifier where appropriate.</p>
+
+		<h3>G. Modifications to "24.7 Range access"</h3>
+		<pre>
+In addition to being available via inclusion of the &lt;iterator&gt; header, the function templates in 24.7 are
+available when any of the following headers are included: &lt;array&gt;, &lt;deque&gt;, &lt;forward_list&gt;, &lt;list&gt;,
+&lt;map&gt;, &lt;regex&gt;, &lt;set&gt;, &lt;string&gt;, &lt;unordered_map&gt;, &lt;unordered_set&gt;, and &lt;vector&gt;.
+
+template &lt;class C&gt; <span class="addition">constexpr</span> auto begin(C& c) -&gt; decltype(c.begin());
+template &lt;class C&gt; <span class="addition">constexpr</span> auto begin(const C& c) -&gt; decltype(c.begin());
+Returns: c.begin().
+
+template &lt;class C&gt; <span class="addition">constexpr</span> auto end(C& c) -&gt; decltype(c.end());
+template &lt;class C&gt; <span class="addition">constexpr</span> auto end(const C& c) -&gt; decltype(c.end());
+Returns: c.end().
+
+template &lt;class T, size_t N&gt; constexpr T* begin(T (&array)[N]) noexcept;
+Returns: array.
+
+template &lt;class T, size_t N&gt; constexpr T* end(T (&array)[N]) noexcept;
+Returns: array + N.
+
+template &lt;class C&gt; constexpr auto cbegin(const C& c) noexcept(noexcept(std::begin(c)))
+    -&gt; decltype(std::begin(c));
+Returns: std::begin(c).
+
+template &lt;class C&gt; constexpr auto cend(const C& c) noexcept(noexcept(std::end(c)))
+    -&gt; decltype(std::end(c));
+Returns: std::end(c).
+
+template &lt;class C&gt; <span class="addition">constexpr</span> auto rbegin(C& c) -&gt; decltype(c.rbegin());
+template &lt;class C&gt; <span class="addition">constexpr</span> auto rbegin(const C& c) -&gt; decltype(c.rbegin());
+Returns: c.rbegin().
+
+template &lt;class C&gt; <span class="addition">constexpr</span> auto rend(C& c) -&gt; decltype(c.rend());
+template &lt;class C&gt; <span class="addition">constexpr</span> auto rend(const C& c) -&gt; decltype(c.rend());
+Returns: c.rend().
+
+template &lt;class T, size_t N&gt; <span class="addition">constexpr</span> reverse_iterator&lt;T*&gt; rbegin(T (&array)[N]);
+Returns: reverse_iterator&lt;T*&gt;(array + N).
+
+template &lt;class T, size_t N&gt; <span class="addition">constexpr</span> reverse_iterator&lt;T*&gt; rend(T (&array)[N]);
+Returns: reverse_iterator&lt;T*&gt;(array).
+
+template &lt;class E&gt; <span class="addition">constexpr</span> reverse_iterator&lt;const E*&gt; rbegin(initializer_list&lt;E&gt; il);
+Returns: reverse_iterator&lt;const E*&gt;(il.end()).
+
+template &lt;class E&gt; <span class="addition">constexpr</span> reverse_iterator&lt;const E*&gt; rend(initializer_list&lt;E&gt; il);
+Returns: reverse_iterator&lt;const E*&gt;(il.begin()).
+
+template &lt;class C&gt; <span class="addition">constexpr</span> auto crbegin(const C& c) -&gt; decltype(std::rbegin(c));
+Returns: std::rbegin(c).
+
+template &lt;class C&gt; <span class="addition">constexpr</span> auto crend(const C& c) -&gt; decltype(std::rend(c));
+Returns: std::rend(c).
+		</pre>
+
+		<h3>H. Modifications to "Class template array" (23.3.2)</h3>
+		<pre>
+23.3.2.1 Class template array overview
+
+namespace std {
+
+template &lt;class T, size_t N&gt;
+struct array {
+	// types:
+	typedef T&amp; reference;
+	typedef const T&amp; const_reference;
+	typedef implementation-defined iterator;
+	typedef implementation-defined const_iterator;
+	typedef size_t size_type;
+	typedef ptrdiff_t difference_type;
+	typedef T value_type;
+	typedef T* pointer;
+	typedef const T* const_pointer;
+	typedef std::reverse_iterator&lt;iterator&gt; reverse_iterator;
+	typedef std::reverse_iterator&lt;const_iterator&gt; const_reverse_iterator;
+
+	T elems[N]; // exposition only
+
+	// no explicit construct/copy/destroy for aggregate type
+
+	void fill(const T&amp; u);
+	void swap(array&amp;) noexcept(noexcept(swap(declval&lt;T&amp;&gt;(), declval&lt;T&amp;&gt;())));
+
+	// iterators:
+	<span class="addition">constexpr</span> iterator begin() noexcept;
+	<span class="addition">constexpr</span> const_iterator begin() const noexcept;
+	<span class="addition">constexpr</span> iterator end() noexcept;
+	<span class="addition">constexpr</span> const_iterator end() const noexcept;
+
+	<span class="addition">constexpr</span> reverse_iterator rbegin() noexcept;
+	<span class="addition">constexpr</span> const_reverse_iterator rbegin() const noexcept;
+	<span class="addition">constexpr</span> reverse_iterator rend() noexcept;
+	<span class="addition">constexpr</span> const_reverse_iterator rend() const noexcept;
+
+	<span class="addition">constexpr</span> const_iterator cbegin() const noexcept;
+	<span class="addition">constexpr</span> const_iterator cend() const noexcept;
+	<span class="addition">constexpr</span> const_reverse_iterator crbegin() const noexcept;
+	<span class="addition">constexpr</span> const_reverse_iterator crend() const noexcept;
+
+	// capacity:
+	constexpr bool empty() const noexcept;
+	constexpr size_type size() const noexcept;
+	constexpr size_type max_size() const noexcept;
+	// element
+	<span class="addition">constexpr</span> reference operator[](size_type n);
+	constexpr const_reference operator[](size_type n) const;
+	<span class="addition">constexpr</span> reference at(size_type n);
+	constexpr const_reference at(size_type n) const;
+	<span class="addition">constexpr</span> reference front();
+	constexpr const_reference front() const;
+	<span class="addition">constexpr</span> reference back();
+	constexpr const_reference back() const;
+
+	<span class="addition">constexpr</span> T * data() noexcept;
+	<span class="addition">constexpr</span> const T * data() const noexcept;
+};
+
+}
+
+23.3.2.5 array::data
+<span class="addition">constexpr</span> T* data() noexcept;
+<span class="addition">constexpr</span> const T* data() const noexcept;
+Returns: elems.
+		</pre>
 
 
 		<h2>V. Revision History</h2>
@@ -354,19 +782,23 @@ namespace std {
 			Available online at <a href="https://github.com/boostorg/array/pull/4/files">
 				https://github.com/boostorg/array/pull/4/files</a></p>
 		<p>[<a name="N3690">N3690</a>] Working Draft, Standard for Programming Language C ++.
-			Available online at <a href="www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/n4527.pdf">
+			Available online at <a href="http://apolukhin.github.io/constexpr_additions/www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/n4527.pdf">
 				www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/n4527.pdf</a></p>
 		<p>[<a name="N4527">N4527</a>] "Draft N3690 : Why is reference std::array::operator[] not constexpr ?" discussion.
-			Available online at <a href="https://groups.google.com/a/isocpp.org/forum/#!topic/std-discussion/nrAu_YbCbYM">
+			Available online at <a href="https://groups.google.com/a/isocpp.org/forum/#%21topic/std-discussion/nrAu_YbCbYM">
 				https://groups.google.com/a/isocpp.org/forum/#!topic/std-discussion/nrAu_YbCbYM</a></p>
 		<p>[<a name="Antony Polukhin">Antony Polukhin</a>] "[std-proposals] Towards a constexpr usable Standard Library" discussion.
-			Available online at <a href="https://groups.google.com/a/isocpp.org/forum/#!topic/std-discussion/nrAu_YbCbYM">
+			Available online at <a href="https://groups.google.com/a/isocpp.org/forum/#%21topic/std-discussion/nrAu_YbCbYM">
 				https://groups.google.com/a/isocpp.org/forum/#!topic/std-proposals/wdh1lLlRnX4</a></p>
 		<p>[<a name="Antony Polukhin">Antony Polukhin</a>] Proof of concept implementation.
 			Available online at <a href="https://github.com/apolukhin/constexpr_additions/blob/master/constexpr_additions.cpp">
 				https://github.com/apolukhin/constexpr_additions/blob/master/constexpr_additions.cpp</a></p>
+		<p>[<a name="rhalbersma">rhalbersma<a>] std::array only extended proof of concept.
+			Available online at <a href="https://bitbucket.org/rhalbersma/xstd/src/42553df6107623c71163f104b6f3cc550c245b4b/include/xstd/array.hpp">
+				https://bitbucket.org/rhalbersma/xstd/src/42553df6107623c71163f104b6f3cc550c245b4b/include/xstd/array.hpp</a></p>
 		<p>&nbsp;</p>
 
 		<h2>VII. Acknowledgements</h2>
 		<p>Walter E. Brown provided numerous comments, corrections, and suggestions for this proposal.</p>
+
 </body></html>
