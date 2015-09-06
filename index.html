@@ -48,8 +48,8 @@ int main() {
 		<p>This proposal is a pure library extension. It proposes changes to
 			existing headers <code>&lt;iterator&gt;</code> and <code>&lt;array&gt;</code> such that the changes do not break existing code
 			and do not degrade performance. It does not require any changes in the core 
-			language, and it has been implemented in standard C++. The proposal 
-			depends on <a href="http://cplusplus.github.io/LWG/lwg-active.html#2296">DR2296</a> in <code>std::reverse_iterator::operator-&gt;()</code>.
+			language, and it has been implemented in standard C++. The proposal depends on the proposed resolution for LWG2296.
+			<a href="http://cplusplus.github.io/LWG/lwg-active.html#2296">LWG2296</a> in Revision D94 of the Library Active Issues List</code>.
 		</p>
 
 		<h2>III. Design Decisions</h2>
@@ -759,6 +759,9 @@ struct array {
 <span class="addition">constexpr</span> const T* data() const noexcept;
 Returns: elems.
 		</pre>
+
+        <h3>J. Feature-testing macro</h3>
+        <p>For the purposes of SG10, we recommend the feature-testing macro name <code>__cpp_lib_array_constexpr</code>.</p>
 
 
 		<h2>V. Revision History</h2>
